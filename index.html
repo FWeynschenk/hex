@@ -3,34 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hex Game</title>
+    <title>Hex - Classic Strategy Board Game</title>
+    <meta name="description" content="Play Hex, a classic abstract strategy board game online. Connect your sides to win against intelligent AI opponents. Free to play, no download required.">
+    <meta name="keywords" content="Hex, Hex Game, Strategy Board Game, Nash, Abstract Strategy, Online Game, AI Opponent, MCTS, Heuristic AI">
+    <meta name="author" content="SimpleSiteProj">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Hex - Classic Strategy Board Game">
+    <meta property="og:description" content="Play Hex online! Connect two opposite sides of a hexagonal grid while blocking your opponent. Features multiple AI difficulties and board sizes.">
+    <meta property="og:image" content="Hexagon.webp">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:title" content="Hex - Classic Strategy Board Game">
+    <meta property="twitter:description" content="Play Hex online! Connect two opposite sides of a hexagonal grid while blocking your opponent. Features multiple AI difficulties and board sizes.">
+    <meta property="twitter:image" content="Hexagon.webp">
+
     <link rel="icon" type="image/webp" href="Hexagon.webp">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd6;
+            --secondary: #764ba2;
+            --accent: #e74c3c;
+            --blue: #3498db;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-white: rgba(255, 255, 255, 0.95);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: var(--text);
         }
 
         .game-container {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-white);
             backdrop-filter: blur(10px);
             border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
             padding: 40px;
             max-width: 800px;
             width: 100%;
+            transition: padding 0.3s ease;
         }
 
         h1 {
@@ -39,17 +69,18 @@
             font-size: 3em;
             font-weight: 700;
             letter-spacing: -1px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            line-height: 1.2;
         }
 
         .subtitle {
             text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 30px;
+            color: var(--text-light);
+            margin-bottom: 25px;
             font-size: 1em;
             font-weight: 400;
             letter-spacing: 0.5px;
@@ -59,7 +90,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 15px;
             background: #f8f9fa;
@@ -70,32 +101,29 @@
         .status {
             font-size: 1.1em;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text);
             flex: 1;
-            min-width: 200px;
+            min-width: 140px;
             display: flex;
             align-items: center;
             gap: 10px;
+            white-space: nowrap;
         }
 
-        .player-red {
-            color: #e74c3c;
-        }
-
-        .player-blue {
-            color: #3498db;
-        }
+        .player-red { color: var(--accent); }
+        .player-blue { color: var(--blue); }
 
         .controls {
             display: flex;
-            gap: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         button {
             background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            padding: 10px 24px;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 10px 20px;
             border-radius: 12px;
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
@@ -103,10 +131,11 @@
             font-weight: 600;
             transition: all 0.2s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            white-space: nowrap;
         }
 
         button:hover:not(:disabled) {
-            background: #667eea;
+            background: var(--primary);
             color: white;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
@@ -124,21 +153,20 @@
         }
 
         #newGameBtn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
             border: none;
         }
 
         #newGameBtn:hover {
-             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-             transform: translateY(-2px);
-             box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
         }
 
         .board-container {
             display: flex;
             justify-content: center;
-            margin: 30px 0;
+            margin: 20px 0;
             position: relative;
             padding: 10px;
         }
@@ -147,6 +175,7 @@
             max-width: 100%;
             height: auto;
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+            touch-action: manipulation; /* Improves touch response */
         }
 
         .hex {
@@ -154,19 +183,13 @@
             transition: transform 0.2s ease, opacity 0.2s;
         }
 
-
         .hex:hover:not(.occupied):not(.disabled) .hex-fill {
             opacity: 0.5;
             fill: #e0e0e0;
         }
 
-        .hex.disabled {
-            cursor: not-allowed;
-        }
-
-        .hex.occupied {
-            cursor: default;
-        }
+        .hex.disabled { cursor: not-allowed; }
+        .hex.occupied { cursor: default; }
 
         .hex-fill {
             stroke: #bdc3c7;
@@ -176,12 +199,12 @@
         }
 
         .hex-fill.red {
-            fill: #e74c3c;
+            fill: var(--accent);
             stroke: #c0392b;
         }
 
         .hex-fill.blue {
-            fill: #3498db;
+            fill: var(--blue);
             stroke: #2980b9;
         }
 
@@ -191,13 +214,8 @@
             stroke-linecap: round;
         }
 
-        .edge-red {
-            stroke: #e74c3c;
-        }
-
-        .edge-blue {
-            stroke: #3498db;
-        }
+        .edge-red { stroke: var(--accent); }
+        .edge-blue { stroke: var(--blue); }
 
         .winning-path {
             stroke: #f1c40f;
@@ -207,6 +225,7 @@
             stroke-linejoin: round;
             animation: dash 1.5s ease-in-out infinite alternate, glow 1.5s ease-in-out infinite alternate;
             filter: drop-shadow(0 0 5px #f1c40f);
+            pointer-events: none;
         }
 
         @keyframes glow {
@@ -239,10 +258,9 @@
             text-align: center;
             color: #95a5a6;
             font-style: italic;
-            margin-top: 15px;
+            margin-top: 10px;
             min-height: 24px;
             font-size: 0.9em;
-            transition: opacity 0.3s;
         }
 
         .ai-thinking:not(:empty) {
@@ -257,8 +275,8 @@
         .difficulty-indicator {
             display: flex;
             justify-content: center;
-            gap: 25px;
-            color: #7f8c8d;
+            gap: 20px;
+            color: var(--text-light);
             font-size: 0.9em;
             margin-top: 10px;
             flex-wrap: wrap;
@@ -272,7 +290,7 @@
 
         .difficulty-indicator .difficulty-level {
             font-weight: 700;
-            color: #667eea;
+            color: var(--primary);
             text-transform: capitalize;
         }
 
@@ -280,25 +298,20 @@
             background: #f8f9fa;
             border-radius: 16px;
             padding: 20px;
-            margin-top: 30px;
+            margin-top: 20px;
             font-size: 0.9em;
             color: #555;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary);
         }
 
         .rules h3 {
             margin-bottom: 12px;
-            color: #2c3e50;
+            color: var(--text);
             font-weight: 600;
         }
 
-        .rules ul {
-            margin-left: 20px;
-        }
-
-        .rules li {
-            margin: 8px 0;
-        }
+        .rules ul { margin-left: 20px; }
+        .rules li { margin: 6px 0; }
 
         .swap-button {
             background: #e67e22;
@@ -314,27 +327,23 @@
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
 
         .modal {
             background: white;
             border-radius: 24px;
             padding: 40px;
             max-width: 500px;
-            width: 90%;
+            width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -342,30 +351,22 @@
         }
 
         @keyframes modalSlideIn {
-            from {
-                transform: translateY(20px) scale(0.95);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0) scale(1);
-                opacity: 1;
-            }
+            from { transform: translateY(20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
         }
 
         .modal h2 {
-            color: #2d3436;
+            color: var(--text);
             margin-bottom: 25px;
             font-size: 2em;
             text-align: center;
             font-weight: 700;
         }
 
-        .modal-section {
-            margin-bottom: 30px;
-        }
-
+        .modal-section { margin-bottom: 25px; }
+        
         .modal-section h3 {
-            color: #7f8c8d;
+            color: var(--text-light);
             margin-bottom: 15px;
             font-size: 0.9em;
             text-transform: uppercase;
@@ -377,16 +378,13 @@
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
-        }
-
-        .board-size-options {
             justify-content: center;
         }
 
         .difficulty-btn, .option-btn, .ai-btn {
             flex: 1;
             min-width: 100px;
-            padding: 15px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             background: white;
             border-radius: 12px;
@@ -395,30 +393,28 @@
             text-align: center;
         }
 
-        .ai-btn {
-            min-width: 140px;
-        }
+        .ai-btn { min-width: 140px; }
 
         .difficulty-btn:hover, .option-btn:hover, .ai-btn:hover {
-            border-color: #667eea;
+            border-color: var(--primary);
             transform: translateY(-2px);
         }
 
         .difficulty-btn.selected, .option-btn.selected, .ai-btn.selected {
-            border-color: #667eea;
-            background: #667eea;
+            border-color: var(--primary);
+            background: var(--primary);
             color: white;
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .difficulty-btn .difficulty-title, .option-btn .option-title, .ai-btn .ai-title {
+        .difficulty-title, .option-title, .ai-title {
             font-weight: 700;
-            font-size: 1em;
+            font-size: 0.95em;
             margin-bottom: 4px;
         }
 
-        .difficulty-btn .difficulty-desc, .option-btn .option-desc, .ai-btn .ai-desc {
-            font-size: 0.8em;
+        .difficulty-desc, .option-desc, .ai-desc {
+            font-size: 0.75em;
             opacity: 0.8;
         }
 
@@ -428,42 +424,134 @@
             margin-top: 30px;
         }
 
-        .modal-buttons button {
-            flex: 1;
-            padding: 12px;
-            font-size: 1em;
-        }
+        .modal-buttons button { flex: 1; padding: 12px; }
 
         .btn-secondary {
             background: #f1f2f6;
-            color: #7f8c8d;
+            color: var(--text-light);
             border-color: #f1f2f6;
         }
 
         .btn-secondary:hover {
             background: #e0e0e0;
-            color: #2c3e50;
+            color: var(--text);
             box-shadow: none;
         }
 
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 2em;
-            }
+        /* --- RESPONSIVE DESIGN --- */
 
+        /* Laptops / Tablets with limited height */
+        @media (max-height: 800px) {
+            body { padding: 10px; }
+            .game-container { padding: 20px 30px; }
+            h1 { font-size: 2em; margin-bottom: 0; }
+            .subtitle { margin-bottom: 10px; font-size: 0.9em; }
+            .game-info { margin-bottom: 10px; padding: 10px; }
+            .board-container { margin: 5px 0; }
+            /* Limit board height so it doesn't push controls off screen */
+            svg { max-height: 50vh; width: auto; } 
+            .modal { padding: 25px; }
+        }
+
+        /* Tablets & Small Laptops */
+        @media (max-width: 768px) {
             .game-container {
-                padding: 20px;
-                border-radius: 15px;
+                padding: 25px;
+                max-width: 95%;
             }
 
-            .difficulty-options, .board-size-options, .first-player-options {
+            h1 { font-size: 2.5em; }
+
+            .game-info {
                 flex-direction: column;
+                align-items: stretch;
             }
+
+            .status {
+                justify-content: center;
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .controls {
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .controls button {
+                flex: 1;
+                padding: 12px 10px;
+                font-size: 0.9em;
+            }
+        }
+
+        /* Mobile Phones */
+        @media (max-width: 480px) {
+            body { 
+                padding: 0;
+                align-items: flex-start;
+            }
+            
+            .game-container {
+                padding: 15px 10px;
+                border-radius: 0;
+                min-height: 100vh;
+                box-shadow: none;
+            }
+
+            h1 { font-size: 1.8em; margin-top: 5px; }
+            .subtitle { margin-bottom: 15px; font-size: 0.85em; }
+
+            .game-info {
+                padding: 10px;
+                margin-bottom: 15px;
+                gap: 10px;
+            }
+            
+            .status { font-size: 1em; }
+
+            .controls { gap: 8px; }
+            
+            .controls button {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+
+            /* Make board take full width but not overflow */
+            .board-container { 
+                margin: 10px -10px; /* Negative margin to pull board to edges */
+                width: calc(100% + 20px);
+                overflow: hidden;
+            }
+            
+            svg {
+                width: 100%;
+                height: auto;
+                max-height: 55vh;
+            }
+            
+            .rules {
+                padding: 15px;
+                font-size: 0.85em;
+                margin-top: 10px;
+            }
+
+            /* Modal adjustments */
+            .modal { padding: 20px; }
+            .modal h2 { font-size: 1.5em; }
+            
+            .option-btn, .difficulty-btn, .ai-btn {
+                padding: 10px 5px;
+                min-width: 45%; /* 2 per row */
+            }
+            
+            .difficulty-title, .option-title, .ai-title { font-size: 0.85em; }
+            .difficulty-desc, .option-desc, .ai-desc { display: none; } /* Hide descriptions on small screens to save space */
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <main class="game-container">
         <h1>HEX</h1>
         <div class="subtitle">Connect your sides to win!</div>
         
@@ -495,7 +583,7 @@
                 <li>First to connect their sides wins!</li>
             </ul>
         </div>
-    </div>
+    </main>
 
     <!-- New Game Modal -->
     <div class="modal-overlay" id="newGameModal">
@@ -696,6 +784,19 @@
 
                 // Initialize default AI
                 this.updateDifficultyIndicator();
+
+                // Initialize the AI in the worker immediately
+                if (this.selectedAI) {
+                    this.workerBusy = true;
+                    this.worker.postMessage({
+                        type: 'init',
+                        data: {
+                            aiId: this.selectedAI,
+                            difficulty: this.selectedDifficulty,
+                            player: this.aiPlayer
+                        }
+                    });
+                }
             }
 
             populateAIOptions() {
@@ -821,22 +922,27 @@
             }
 
             updateDifficultyIndicator() {
-                const currentAI = aiProvider.getCurrentAI(); // Keeps null/metadata only?
-                // Actually getCurrentAI returns what createAI set, but createAI is now in worker.
-                // So local aiProvider.currentAI is likely null or stale.
-                // We should use selectedAI metadata.
-                
                 let aiName = 'AI';
+                let difficultyLabel = this.selectedDifficulty;
+                
                 const availableAIs = aiProvider.getAvailableAIs();
                 const selected = availableAIs.find(ai => ai.id === this.selectedAI);
+                
                 if (selected) {
                     aiName = selected.name;
+                    
+                    // Try to get the display name from the AI's difficulty config
+                    const difficulties = aiProvider.getDifficulties(this.selectedAI);
+                    if (difficulties && difficulties[this.selectedDifficulty]) {
+                        difficultyLabel = difficulties[this.selectedDifficulty].name;
+                    } else {
+                        // Fallback to capitalized key
+                        difficultyLabel = this.selectedDifficulty.charAt(0).toUpperCase() + 
+                                        this.selectedDifficulty.slice(1);
+                    }
                 }
                 
-                const difficultyName = this.selectedDifficulty.charAt(0).toUpperCase() + 
-                                      this.selectedDifficulty.slice(1);
-                
-                this.difficultyLevelEl.textContent = `${aiName} (${difficultyName})`;
+                this.difficultyLevelEl.textContent = `${aiName} (${difficultyLabel})`;
                 this.boardSizeDisplayEl.textContent = `${this.boardSize}×${this.boardSize}`;
             }
 
