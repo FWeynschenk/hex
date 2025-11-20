@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Game</title>
+    <link rel="icon" type="image/webp" href="Hexagon.webp">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1em;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 15px;
+        }
+
+        .status {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-red {
+            color: #e74c3c;
+        }
+
+        .player-blue {
+            color: #3498db;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #ccc;
+            color: #999;
+        }
+
+        #newGameBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        #newGameBtn:hover {
+             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+             transform: translateY(-2px);
+             box-shadow: 0 8px 20px rgba(118, 75, 162, 0.4);
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            position: relative;
+            padding: 10px;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+        }
+
+        .hex {
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s;
+        }
+
+        .hex:hover:not(.occupied) {
+            transform: scale(0.95);
+        }
+
+        .hex:hover:not(.occupied) .hex-fill {
+            opacity: 0.5;
+            fill: #e0e0e0;
+        }
+
+        .hex.occupied {
+            cursor: default;
+        }
+
+        .hex-fill {
+            stroke: #bdc3c7;
+            stroke-width: 1.5;
+            fill: #f9f9f9;
+            transition: fill 0.3s ease;
+        }
+
+        .hex-fill.red {
+            fill: #e74c3c;
+            stroke: #c0392b;
+        }
+
+        .hex-fill.blue {
+            fill: #3498db;
+            stroke: #2980b9;
+        }
+
+        .edge-marker {
+            stroke-width: 8;
+            opacity: 0.2;
+            stroke-linecap: round;
+        }
+
+        .edge-red {
+            stroke: #e74c3c;
+        }
+
+        .edge-blue {
+            stroke: #3498db;
+        }
+
+        .winning-path {
+            stroke: #f1c40f;
+            stroke-width: 6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: dash 1.5s ease-in-out infinite alternate, glow 1.5s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 5px #f1c40f);
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 5px #f1c40f); }
+            to { filter: drop-shadow(0 0 15px #f1c40f); }
+        }
+
+        .analytics-overlay {
+            pointer-events: none;
+            font-size: 10px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            font-family: 'Poppins', sans-serif;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .analytics-score-bg {
+            opacity: 0.8;
+        }
+
+        .analytics-toggle.active {
+            background: #2ecc71;
+            border-color: #2ecc71;
+            color: white;
+        }
+
+        .ai-thinking {
+            text-align: center;
+            color: #95a5a6;
+            font-style: italic;
+            margin-top: 15px;
+            min-height: 24px;
+            font-size: 0.9em;
+            transition: opacity 0.3s;
+        }
+
+        .ai-thinking:not(:empty) {
+            animation: pulseText 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 0.6; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        .difficulty-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            background: rgba(0,0,0,0.03);
+            padding: 8px 20px;
+            border-radius: 20px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .difficulty-indicator .difficulty-level {
+            font-weight: 700;
+            color: #667eea;
+            text-transform: capitalize;
+        }
+
+        .rules {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #555;
+            border-left: 4px solid #667eea;
+        }
+
+        .rules h3 {
+            margin-bottom: 12px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .rules li {
+            margin: 8px 0;
+        }
+
+        .swap-button {
+            background: #e67e22;
+            border-color: #e67e22;
+            color: white;
+        }
+
+        .swap-button:hover {
+            background: #d35400;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(20px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal h2 {
+            color: #2d3436;
+            margin-bottom: 25px;
+            font-size: 2em;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .modal-section {
+            margin-bottom: 30px;
+        }
+
+        .modal-section h3 {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .difficulty-options, .board-size-options, .first-player-options, .ai-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .board-size-options {
+            justify-content: center;
+        }
+
+        .difficulty-btn, .option-btn, .ai-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .ai-btn {
+            min-width: 140px;
+        }
+
+        .difficulty-btn:hover, .option-btn:hover, .ai-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .difficulty-btn.selected, .option-btn.selected, .ai-btn.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .difficulty-btn .difficulty-title, .option-btn .option-title, .ai-btn .ai-title {
+            font-weight: 700;
+            font-size: 1em;
+            margin-bottom: 4px;
+        }
+
+        .difficulty-btn .difficulty-desc, .option-btn .option-desc, .ai-btn .ai-desc {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1em;
+        }
+
+        .btn-secondary {
+            background: #f1f2f6;
+            color: #7f8c8d;
+            border-color: #f1f2f6;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            color: #2c3e50;
+            box-shadow: none;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .game-container {
+                padding: 20px;
+                border-radius: 15px;
+            }
+
+            .difficulty-options, .board-size-options, .first-player-options {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>HEX</h1>
+        <div class="subtitle">Connect your sides to win!</div>
+        
+        <div class="game-info">
+            <div class="status" id="status">Red's turn</div>
+            <div class="controls">
+                <button id="analyticsBtn" style="display: none;" class="analytics-toggle">Analytics: OFF</button>
+                <button id="swapBtn" style="display: none;" class="swap-button">Swap Sides</button>
+                <button id="newGameBtn">New Game</button>
+            </div>
+        </div>
+
+        <div class="board-container">
+            <svg id="board" width="600" height="600"></svg>
+        </div>
+
+        <div class="ai-thinking" id="aiThinking"></div>
+        <div class="difficulty-indicator">
+            <div>Board: <span class="difficulty-level" id="boardSizeDisplay">7×7</span></div>
+            <div>Opponent: <span class="difficulty-level" id="difficultyLevel">MCTS AI (Medium)</span></div>
+        </div>
+
+        <div class="rules">
+            <h3>Rules:</h3>
+            <ul>
+                <li><strong class="player-red">Red</strong> connects top ↔ bottom</li>
+                <li><strong class="player-blue">Blue</strong> connects left ↔ right</li>
+                <li>Players alternate placing stones on empty hexagons</li>
+                <li>If you go first (Red), you may swap colors after your first move</li>
+                <li>First to connect their sides wins!</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- New Game Modal -->
+    <div class="modal-overlay" id="newGameModal">
+        <div class="modal">
+            <h2>New Game</h2>
+            
+            <div class="modal-section">
+                <h3>Board Size</h3>
+                <div class="board-size-options">
+                    <div class="option-btn selected" data-size="7">
+                        <div class="option-title">7×7</div>
+                        <div class="option-desc">No center opening</div>
+                    </div>
+                    <div class="option-btn" data-size="11">
+                        <div class="option-title">11×11</div>
+                    </div>
+                    <div class="option-btn" data-size="13">
+                        <div class="option-title">13×13</div>
+                    </div>
+                    <div class="option-btn" data-size="14">
+                        <div class="option-title">14×14</div>
+                        <div class="option-desc">Nash's favorite</div>
+                    </div>
+                    <div class="option-btn" data-size="19">
+                        <div class="option-title">19×19</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>Who Goes First?</h3>
+                <div class="first-player-options">
+                    <div class="option-btn selected" data-first="player">
+                        <div class="option-title">You Go First</div>
+                        <div class="option-desc">Play as Red</div>
+                    </div>
+                    <div class="option-btn" data-first="ai">
+                        <div class="option-title">AI Goes First</div>
+                        <div class="option-desc">Play as Blue</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-section">
+                <h3>AI Opponent</h3>
+                <div class="ai-options" id="aiOptions">
+                    <!-- AI options will be dynamically generated -->
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <h3>AI Difficulty</h3>
+                <div class="difficulty-options" id="difficultyOptions">
+                    <!-- Difficulty options will be dynamically generated based on selected AI -->
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancelBtn">Cancel</button>
+                <button id="startGameBtn">Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Implementation Scripts -->
+    <script src="ai/hexUtils.js"></script>
+    <script src="ai/aiprovider.js"></script>
+    <!-- <script src="ai/randomAI.js"></script> -->
+    <script src="ai/heuristicAI.js"></script>
+    <script src="ai/mctsAI.js"></script>
+    <script src="ai/advancedHexAI.js"></script>
+    <script src="js/hexGame.js"></script>
+
+    <script>
+        // Board Size to Hex Radius mapping (to fit different sizes on screen)
+        const SIZE_RADIUS_MAP = {
+            7: 35,
+            11: 25,
+            13: 22,
+            14: 20,
+            19: 15
+        };
+
+        // UI Controller
+        class HexUI {
+            constructor() {
+                this.boardSize = 7;
+                this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
+                this.game = new HexGame(this.boardSize);
+                this.worker = new Worker('js/ai-worker.js');
+                this.workerBusy = false;
+                
+                this.humanPlayer = PLAYER_RED; // Human starts as Red by default
+                this.aiPlayer = PLAYER_BLUE;
+                this.selectedHex = null;
+                this.svg = document.getElementById('board');
+                this.statusEl = document.getElementById('status');
+                this.aiThinkingEl = document.getElementById('aiThinking');
+                this.newGameBtn = document.getElementById('newGameBtn');
+                this.swapBtn = document.getElementById('swapBtn');
+                this.analyticsBtn = document.getElementById('analyticsBtn');
+                this.hexElements = [];
+                this.analyticsEnabled = false;
+                
+                // Modal elements
+                this.modal = document.getElementById('newGameModal');
+                this.startGameBtn = document.getElementById('startGameBtn');
+                this.cancelBtn = document.getElementById('cancelBtn');
+                this.aiOptionsEl = document.getElementById('aiOptions');
+                this.difficultyOptionsEl = document.getElementById('difficultyOptions');
+                this.boardSizeBtns = document.querySelectorAll('[data-size]');
+                this.firstPlayerBtns = document.querySelectorAll('[data-first]');
+                this.difficultyLevelEl = document.getElementById('difficultyLevel');
+                this.boardSizeDisplayEl = document.getElementById('boardSizeDisplay');
+                this.selectedAI = null; // Will be set from available AIs
+                this.selectedDifficulty = 'medium';
+                this.selectedBoardSize = 7;
+                this.selectedFirstPlayer = 'player';
+                
+                this.setupWorker();
+                this.init();
+            }
+            
+            setupWorker() {
+                this.worker.onmessage = (e) => {
+                    const { type, move, scores, error, success } = e.data;
+                    if (type === 'error') {
+                        console.error('AI Worker Error:', error);
+                        this.workerBusy = false;
+                    } else if (type === 'initComplete') {
+                        console.log('AI Initialized in worker');
+                        this.workerBusy = false;
+                        if (this._resolveInit) {
+                            this._resolveInit();
+                            this._resolveInit = null;
+                        }
+                    } else if (type === 'move') {
+                        this.workerBusy = false;
+                        if (this._resolveMove) {
+                            this._resolveMove(move);
+                            this._resolveMove = null;
+                        }
+                    } else if (type === 'scores') {
+                        if (this._resolveScores) {
+                            this._resolveScores(scores);
+                            this._resolveScores = null;
+                        }
+                    }
+                };
+            }
+
+            init() {
+                this.drawBoard();
+                this.updateStatus();
+                
+                // Populate AI options
+                this.populateAIOptions();
+                
+                this.newGameBtn.addEventListener('click', () => this.showNewGameModal());
+                this.swapBtn.addEventListener('click', () => this.handleSwap());
+                this.analyticsBtn.addEventListener('click', () => this.toggleAnalytics());
+                
+                // Modal event listeners
+                this.startGameBtn.addEventListener('click', () => this.startNewGame());
+                this.cancelBtn.addEventListener('click', () => this.hideModal());
+                
+                // Board size selection
+                this.boardSizeBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.boardSizeBtns.forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        this.selectedBoardSize = parseInt(btn.dataset.size);
+                    });
+                });
+
+                // First player selection
+                this.firstPlayerBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.firstPlayerBtns.forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        this.selectedFirstPlayer = btn.dataset.first;
+                    });
+                });
+
+                // Close modal on overlay click
+                this.modal.addEventListener('click', (e) => {
+                    if (e.target === this.modal) {
+                        this.hideModal();
+                    }
+                });
+
+                // Close modal on Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.modal.classList.contains('active')) {
+                        this.hideModal();
+                    }
+                });
+
+                // Initialize default AI
+                this.updateDifficultyIndicator();
+            }
+
+            populateAIOptions() {
+                const availableAIs = aiProvider.getAvailableAIs();
+                this.aiOptionsEl.innerHTML = '';
+                
+                // Set default AI to first available if not already set
+                if (!this.selectedAI && availableAIs.length > 0) {
+                    this.selectedAI = availableAIs[0].id;
+                }
+                
+                availableAIs.forEach((ai, index) => {
+                    const isSelected = ai.id === this.selectedAI;
+                    const aiBtn = document.createElement('div');
+                    aiBtn.className = 'ai-btn' + (isSelected ? ' selected' : '');
+                    aiBtn.dataset.aiId = ai.id;
+                    
+                    aiBtn.innerHTML = `
+                        <div class="ai-title">${ai.name}</div>
+                        <div class="ai-desc">${ai.description}</div>
+                    `;
+                    
+                    aiBtn.addEventListener('click', () => {
+                        document.querySelectorAll('.ai-btn').forEach(b => b.classList.remove('selected'));
+                        aiBtn.classList.add('selected');
+                        this.selectedAI = ai.id;
+                        this.updateDifficultyOptions(ai.id);
+                    });
+                    
+                    this.aiOptionsEl.appendChild(aiBtn);
+                });
+                
+                // Initialize difficulty options for selected AI
+                if (this.selectedAI) {
+                    this.updateDifficultyOptions(this.selectedAI);
+                }
+            }
+
+            updateDifficultyOptions(aiId) {
+                const difficulties = aiProvider.getDifficulties(aiId);
+                this.difficultyOptionsEl.innerHTML = '';
+                
+                const difficultyKeys = Object.keys(difficulties);
+                difficultyKeys.forEach((key, index) => {
+                    const diff = difficulties[key];
+                    const diffBtn = document.createElement('div');
+                    diffBtn.className = 'difficulty-btn' + (key === this.selectedDifficulty ? ' selected' : '');
+                    diffBtn.dataset.difficulty = key;
+                    
+                    diffBtn.innerHTML = `
+                        <div class="difficulty-title">${diff.name}</div>
+                        <div class="difficulty-desc">${diff.description}</div>
+                    `;
+                    
+                    diffBtn.addEventListener('click', () => {
+                        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+                        diffBtn.classList.add('selected');
+                        this.selectedDifficulty = key;
+                    });
+                    
+                    this.difficultyOptionsEl.appendChild(diffBtn);
+                });
+                
+                // If current difficulty doesn't exist for this AI, select the first available
+                if (!difficulties[this.selectedDifficulty] && difficultyKeys.length > 0) {
+                    this.selectedDifficulty = difficultyKeys[0];
+                    document.querySelector(`[data-difficulty="${this.selectedDifficulty}"]`)?.classList.add('selected');
+                }
+            }
+
+            showNewGameModal() {
+                this.modal.classList.add('active');
+            }
+
+            hideModal() {
+                this.modal.classList.remove('active');
+            }
+
+            async startNewGame() {
+                this.boardSize = this.selectedBoardSize;
+                this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
+                
+                // Set player colors based on who goes first
+                if (this.selectedFirstPlayer === 'player') {
+                    this.humanPlayer = PLAYER_RED;
+                    this.aiPlayer = PLAYER_BLUE;
+                } else {
+                    this.humanPlayer = PLAYER_BLUE;
+                    this.aiPlayer = PLAYER_RED;
+                }
+                
+                // Init AI in worker
+                this.workerBusy = true;
+                this.worker.postMessage({
+                    type: 'init',
+                    data: {
+                        aiId: this.selectedAI,
+                        difficulty: this.selectedDifficulty,
+                        player: this.aiPlayer
+                    }
+                });
+
+                await new Promise(resolve => {
+                    this._resolveInit = resolve;
+                });
+                
+                // Show analytics button if AI supports analytics (check metadata)
+                if (aiProvider.supportsAnalytics(this.selectedAI)) {
+                    this.analyticsBtn.style.display = 'inline-block';
+                } else {
+                    this.analyticsBtn.style.display = 'none';
+                    this.analyticsEnabled = false;
+                }
+                
+                this.updateDifficultyIndicator();
+                this.hideModal();
+                await this.newGame();
+                
+                // If AI goes first, make its move
+                if (this.selectedFirstPlayer === 'ai') {
+                    await this.makeAIMove();
+                }
+            }
+
+            updateDifficultyIndicator() {
+                const currentAI = aiProvider.getCurrentAI(); // Keeps null/metadata only?
+                // Actually getCurrentAI returns what createAI set, but createAI is now in worker.
+                // So local aiProvider.currentAI is likely null or stale.
+                // We should use selectedAI metadata.
+                
+                let aiName = 'AI';
+                const availableAIs = aiProvider.getAvailableAIs();
+                const selected = availableAIs.find(ai => ai.id === this.selectedAI);
+                if (selected) {
+                    aiName = selected.name;
+                }
+                
+                const difficultyName = this.selectedDifficulty.charAt(0).toUpperCase() + 
+                                      this.selectedDifficulty.slice(1);
+                
+                this.difficultyLevelEl.textContent = `${aiName} (${difficultyName})`;
+                this.boardSizeDisplayEl.textContent = `${this.boardSize}×${this.boardSize}`;
+            }
+
+            getHexPoints(x, y) {
+                const points = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i - Math.PI / 6;
+                    points.push([
+                        x + this.hexRadius * Math.cos(angle),
+                        y + this.hexRadius * Math.sin(angle)
+                    ]);
+                }
+                return points.map(p => p.join(',')).join(' ');
+            }
+
+            getHexCenter(row, col) {
+                const hexHeight = this.hexRadius * Math.sqrt(3);
+                const hexWidth = this.hexRadius * 2;
+                const hexHoriz = hexWidth * 0.75;
+                const x = 100 + col * hexHoriz + row * hexHoriz / 2;
+                const y = 100 + row * hexHeight;
+                return [x, y];
+            }
+
+            drawBoard() {
+                this.svg.innerHTML = '';
+                this.hexElements = [];
+
+                const hexHeight = this.hexRadius * Math.sqrt(3);
+                const hexWidth = this.hexRadius * 2;
+                const hexHoriz = hexWidth * 0.75;
+
+                // Calculate SVG dimensions
+                const maxX = 100 + (this.game.size - 1) * hexHoriz + 
+                            (this.game.size - 1) * hexHoriz / 2 + this.hexRadius + 50;
+                const maxY = 100 + (this.game.size - 1) * hexHeight + this.hexRadius + 50;
+                
+                this.svg.setAttribute('viewBox', `0 0 ${maxX} ${maxY}`);
+                this.svg.setAttribute('width', Math.min(600, maxX));
+                this.svg.setAttribute('height', Math.min(600, maxY));
+
+                // Draw edge markers
+                this.drawEdgeMarkers();
+
+                // Draw hexagons
+                for (let row = 0; row < this.game.size; row++) {
+                    this.hexElements[row] = [];
+                    for (let col = 0; col < this.game.size; col++) {
+                        this.drawHex(row, col);
+                    }
+                }
+            }
+
+            drawEdgeMarkers() {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'edge-markers');
+
+                const hexHeight = this.hexRadius * Math.sqrt(3);
+                const hexWidth = this.hexRadius * 2;
+                const hexHoriz = hexWidth * 0.75;
+
+                // Red edges (top and bottom)
+                const topLeft = this.getHexCenter(0, 0);
+                const topRight = this.getHexCenter(0, this.game.size - 1);
+                const bottomLeft = this.getHexCenter(this.game.size - 1, 0);
+                const bottomRight = this.getHexCenter(this.game.size - 1, this.game.size - 1);
+
+                // Top edge (red)
+                const topLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                topLine.setAttribute('x1', topLeft[0] - this.hexRadius);
+                topLine.setAttribute('y1', topLeft[1] - hexHeight / 2);
+                topLine.setAttribute('x2', topRight[0] + this.hexRadius);
+                topLine.setAttribute('y2', topRight[1] - hexHeight / 2);
+                topLine.setAttribute('class', 'edge-marker edge-red');
+                g.appendChild(topLine);
+
+                // Bottom edge (red)
+                const bottomLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                bottomLine.setAttribute('x1', bottomLeft[0] - this.hexRadius);
+                bottomLine.setAttribute('y1', bottomLeft[1] + hexHeight / 2);
+                bottomLine.setAttribute('x2', bottomRight[0] + this.hexRadius);
+                bottomLine.setAttribute('y2', bottomRight[1] + hexHeight / 2);
+                bottomLine.setAttribute('class', 'edge-marker edge-red');
+                g.appendChild(bottomLine);
+
+                // Left edge (blue)
+                const leftLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                leftLine.setAttribute('x1', topLeft[0] - hexHoriz);
+                leftLine.setAttribute('y1', topLeft[1]);
+                leftLine.setAttribute('x2', bottomLeft[0] - hexHoriz);
+                leftLine.setAttribute('y2', bottomLeft[1]);
+                leftLine.setAttribute('class', 'edge-marker edge-blue');
+                g.appendChild(leftLine);
+
+                // Right edge (blue)
+                const rightLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                rightLine.setAttribute('x1', topRight[0] + hexHoriz);
+                rightLine.setAttribute('y1', topRight[1]);
+                rightLine.setAttribute('x2', bottomRight[0] + hexHoriz);
+                rightLine.setAttribute('y2', bottomRight[1]);
+                rightLine.setAttribute('class', 'edge-marker edge-blue');
+                g.appendChild(rightLine);
+
+                this.svg.appendChild(g);
+            }
+
+            drawHex(row, col) {
+                const [x, y] = this.getHexCenter(row, col);
+                const points = this.getHexPoints(x, y);
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'hex');
+                g.setAttribute('data-row', row);
+                g.setAttribute('data-col', col);
+
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                polygon.setAttribute('points', points);
+                polygon.setAttribute('class', 'hex-fill');
+                
+                g.appendChild(polygon);
+
+                g.addEventListener('click', () => this.handleHexClick(row, col));
+
+                this.svg.appendChild(g);
+                this.hexElements[row][col] = { g, polygon, x, y };
+            }
+
+            updateHex(row, col) {
+                const hexData = this.hexElements[row][col];
+                const player = this.game.board[row][col];
+
+                if (player === PLAYER_RED) {
+                    hexData.polygon.classList.add('red');
+                    hexData.g.classList.add('occupied');
+                } else if (player === PLAYER_BLUE) {
+                    hexData.polygon.classList.add('blue');
+                    hexData.g.classList.add('occupied');
+                } else {
+                    hexData.polygon.classList.remove('red', 'blue');
+                    hexData.g.classList.remove('occupied');
+                }
+            }
+
+            async handleHexClick(row, col) {
+                if (this.game.gameOver || this.game.currentPlayer !== this.humanPlayer) {
+                    return;
+                }
+
+                if (this.game.makeMove(row, col)) {
+                    this.updateHex(row, col);
+                    this.updateStatus();
+                    
+                    // Clear analytics after human move
+                    if (this.analyticsEnabled) {
+                        this.clearAnalytics();
+                    }
+
+                    // Swap button only available when human plays first as Red
+                    if (this.game.swapAvailable && this.humanPlayer === PLAYER_RED) {
+                        this.swapBtn.style.display = 'inline-block';
+                    }
+
+                    if (this.game.gameOver) {
+                        this.showWinningPath();
+                        return;
+                    }
+
+                    // AI's turn
+                    await this.makeAIMove();
+                }
+            }
+
+            async handleSwap() {
+                if (!this.game.swapAvailable) return;
+
+                if (this.game.swapSides()) {
+                    this.swapBtn.style.display = 'none';
+                    // Redraw board to show swapped colors
+                    for (let r = 0; r < this.game.size; r++) {
+                        for (let c = 0; c < this.game.size; c++) {
+                            this.updateHex(r, c);
+                        }
+                    }
+                    this.updateStatus();
+                }
+            }
+
+            toggleAnalytics() {
+                this.analyticsEnabled = !this.analyticsEnabled;
+                this.analyticsBtn.textContent = `Analytics: ${this.analyticsEnabled ? 'ON' : 'OFF'}`;
+                this.analyticsBtn.classList.toggle('active', this.analyticsEnabled);
+                
+                // Clear or show analytics
+                if (this.analyticsEnabled) {
+                    this.showAnalytics();
+                } else {
+                    this.clearAnalytics();
+                }
+            }
+
+            async showAnalytics() {
+                // Only show analytics if AI supports it
+                // Check metadata support
+                if (!aiProvider.supportsAnalytics(this.selectedAI)) {
+                    return;
+                }
+
+                // Fetch scores from worker
+                this.worker.postMessage({
+                    type: 'getScores',
+                    data: {
+                        gameState: this.game
+                    }
+                });
+
+                const scores = await new Promise(resolve => {
+                    this._resolveScores = resolve;
+                });
+
+                if (!scores) return;
+
+                this.clearAnalytics();
+
+                // Create analytics group
+                const analyticsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                analyticsGroup.setAttribute('id', 'analytics-layer');
+
+                for (const [key, score] of scores.entries()) {
+                    const [row, col] = key.split(',').map(Number);
+                    if (this.game.board[row][col] !== 0) continue; // Skip occupied cells
+
+                    const hexData = this.hexElements[row][col];
+                    const [x, y] = [hexData.x, hexData.y];
+
+                    // Color gradient from red (bad) to green (good)
+                    const color = this.getScoreColor(score);
+                    
+                    // Draw semi-transparent overlay
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', this.hexRadius * 0.6);
+                    circle.setAttribute('fill', color);
+                    circle.setAttribute('class', 'analytics-score-bg');
+                    analyticsGroup.appendChild(circle);
+
+                    // Draw score text
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x);
+                    text.setAttribute('y', y);
+                    text.setAttribute('class', 'analytics-overlay');
+                    text.setAttribute('fill', 'white');
+                    text.textContent = Math.round(score);
+                    analyticsGroup.appendChild(text);
+                }
+
+                this.svg.appendChild(analyticsGroup);
+            }
+
+            clearAnalytics() {
+                const analyticsLayer = document.getElementById('analytics-layer');
+                if (analyticsLayer) {
+                    analyticsLayer.remove();
+                }
+            }
+
+            getScoreColor(score) {
+                // Score is 0-100, map to red-yellow-green gradient
+                if (score < 50) {
+                    // Red to yellow
+                    const ratio = score / 50;
+                    const r = 255;
+                    const g = Math.round(ratio * 255);
+                    return `rgb(${r}, ${g}, 0)`;
+                } else {
+                    // Yellow to green
+                    const ratio = (score - 50) / 50;
+                    const r = Math.round((1 - ratio) * 255);
+                    const g = 255;
+                    return `rgb(${r}, ${g}, 0)`;
+                }
+            }
+
+            async makeAIMove() {
+                // Check if AI should consider swapping (when AI plays second as Blue)
+                if (this.game.swapAvailable && this.aiPlayer === PLAYER_BLUE) {
+                    this.aiThinkingEl.textContent = 'AI is considering swap...';
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // AI evaluates whether to swap
+                    if (this.shouldAISwap()) {
+                        this.game.swapSides();
+                        this.swapBtn.style.display = 'none';
+                        // Redraw board to show swapped colors
+                        for (let r = 0; r < this.game.size; r++) {
+                            for (let c = 0; c < this.game.size; c++) {
+                                this.updateHex(r, c);
+                            }
+                        }
+                        this.updateStatus();
+                        this.aiThinkingEl.textContent = 'AI swapped colors!';
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        this.aiThinkingEl.textContent = '';
+                        return;
+                    }
+                }
+
+                const thinkingMessages = [
+                    'AI is analyzing positions...',
+                    'AI is considering strategies...',
+                    'AI is evaluating moves...',
+                    'AI is thinking deeply...'
+                ];
+                this.aiThinkingEl.textContent = thinkingMessages[Math.floor(Math.random() * thinkingMessages.length)];
+                
+                // Use setTimeout to allow UI to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Call worker
+                this.workerBusy = true;
+                this.worker.postMessage({
+                    type: 'getMove',
+                    data: {
+                        gameState: this.game
+                    }
+                });
+
+                const move = await new Promise(resolve => {
+                    this._resolveMove = resolve;
+                });
+                
+                if (move) {
+                    this.game.makeMove(move[0], move[1]);
+                    this.updateHex(move[0], move[1]);
+                    this.updateStatus();
+
+                    // Show analytics if enabled
+                    if (this.analyticsEnabled && aiProvider.supportsAnalytics(this.selectedAI)) {
+                        this.showAnalytics();
+                    }
+
+                    if (this.game.gameOver) {
+                        this.showWinningPath();
+                    }
+                } else {
+                    console.warn('AI returned no move, attempting fallback');
+                    // Fallback to random valid move
+                    const validMoves = this.game.getValidMoves();
+                    if (validMoves.length > 0) {
+                        const fallbackMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                        this.game.makeMove(fallbackMove[0], fallbackMove[1]);
+                        this.updateHex(fallbackMove[0], fallbackMove[1]);
+                        this.updateStatus();
+                        
+                        if (this.game.gameOver) {
+                            this.showWinningPath();
+                        }
+                    }
+                }
+
+                this.aiThinkingEl.textContent = '';
+            }
+
+            shouldAISwap() {
+                // AI decides whether to swap based on the opponent's first move
+                // Generally, central moves are strong and worth swapping
+                const firstMove = this.game.history[0];
+                if (!firstMove) return false;
+                
+                const [row, col] = [firstMove.row, firstMove.col];
+                const center = Math.floor(this.game.size / 2);
+                
+                // Calculate how central the move is
+                const distanceFromCenter = Math.abs(row - center) + Math.abs(col - center);
+                
+                // Very central moves are worth swapping
+                if (distanceFromCenter <= 1) {
+                    return true;
+                }
+                
+                // Good diagonal moves might be worth swapping
+                if (Math.abs(row - col) <= 1 && distanceFromCenter <= 2) {
+                    return true;
+                }
+                
+                // Edge moves are generally not worth swapping
+                return false;
+            }
+
+            updateStatus() {
+                if (this.game.gameOver) {
+                    const colorName = this.game.winner === PLAYER_RED ? 'Red' : 'Blue';
+                    const winnerName = this.game.winner === this.humanPlayer ? 'You' : 'AI';
+                    const winnerClass = this.game.winner === PLAYER_RED ? 'player-red' : 'player-blue';
+                    this.statusEl.innerHTML = `<span class="${winnerClass}">${winnerName} (${colorName}) win!</span>`;
+                } else {
+                    const colorName = this.game.currentPlayer === PLAYER_RED ? 'Red' : 'Blue';
+                    const playerName = this.game.currentPlayer === this.humanPlayer ? 'Your' : 'AI';
+                    const playerClass = this.game.currentPlayer === PLAYER_RED ? 'player-red' : 'player-blue';
+                    this.statusEl.innerHTML = `<span class="${playerClass}">${playerName} (${colorName}) turn</span>`;
+                }
+            }
+
+            showWinningPath() {
+                const path = this.game.getWinningPath(this.game.winner);
+                if (!path || path.length < 2) return;
+
+                const pathLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                const points = path.map(([row, col]) => {
+                    const [x, y] = this.getHexCenter(row, col);
+                    return `${x},${y}`;
+                }).join(' ');
+
+                pathLine.setAttribute('points', points);
+                pathLine.setAttribute('class', 'winning-path');
+                this.svg.appendChild(pathLine);
+            }
+
+            newGame() {
+                this.game = new HexGame(this.boardSize);
+                this.swapBtn.style.display = 'none';
+                this.clearAnalytics();
+                this.drawBoard();
+                this.updateStatus();
+                this.aiThinkingEl.textContent = '';
+            }
+        }
+
+        // Initialize AI Provider and Game
+        // The AI provider will auto-discover and register all available AIs
+        aiProvider.initializeAIs();
+        const hexUI = new HexUI();
+    </script>
+</body>
+</html>
