@@ -154,13 +154,14 @@
             transition: transform 0.2s ease, opacity 0.2s;
         }
 
-        .hex:hover:not(.occupied) {
-            transform: scale(0.95);
-        }
 
-        .hex:hover:not(.occupied) .hex-fill {
+        .hex:hover:not(.occupied):not(.disabled) .hex-fill {
             opacity: 0.5;
             fill: #e0e0e0;
+        }
+
+        .hex.disabled {
+            cursor: not-allowed;
         }
 
         .hex.occupied {
@@ -225,6 +226,7 @@
 
         .analytics-score-bg {
             opacity: 0.8;
+            pointer-events: none;
         }
 
         .analytics-toggle.active {
@@ -490,7 +492,6 @@
                 <li><strong class="player-red">Red</strong> connects top ↔ bottom</li>
                 <li><strong class="player-blue">Blue</strong> connects left ↔ right</li>
                 <li>Players alternate placing stones on empty hexagons</li>
-                <li>If you go first (Red), you may swap colors after your first move</li>
                 <li>First to connect their sides wins!</li>
             </ul>
         </div>
@@ -950,6 +951,11 @@
                 g.setAttribute('class', 'hex');
                 g.setAttribute('data-row', row);
                 g.setAttribute('data-col', col);
+                
+                // Disable center hex for 7x7 on first move
+                if (this.boardSize === 7 && row === 3 && col === 3) {
+                    g.classList.add('disabled');
+                }
 
                 const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
                 polygon.setAttribute('points', points);
@@ -984,8 +990,20 @@
                     return;
                 }
 
+                const hexGroup = this.hexElements[row][col].g;
+                if (hexGroup.classList.contains('disabled')) {
+                    return;
+                }
+
                 if (this.game.makeMove(row, col)) {
                     this.updateHex(row, col);
+                    
+                    // Enable center hex after first move if it was disabled
+                    if (this.boardSize === 7) {
+                        const centerHex = this.hexElements[3][3].g;
+                        centerHex.classList.remove('disabled');
+                    }
+
                     this.updateStatus();
                     
                     // Clear analytics after human move
@@ -1170,6 +1188,13 @@
                 if (move) {
                     this.game.makeMove(move[0], move[1]);
                     this.updateHex(move[0], move[1]);
+                    
+                    // Enable center hex after AI move (in case AI went first or it's just time to enable)
+                    if (this.boardSize === 7) {
+                        const centerHex = this.hexElements[3][3].g;
+                        if (centerHex) centerHex.classList.remove('disabled');
+                    }
+
                     this.updateStatus();
 
                     // Show analytics if enabled

@@ -168,10 +168,10 @@ class AIProvider {
         // Auto-register all AIs that have been loaded
         // AIs will register themselves via their metadata
         const aiClasses = [
+            typeof AdvancedHexAI !== 'undefined' ? AdvancedHexAI : null,
             typeof MCTSAI !== 'undefined' ? MCTSAI : null,
             typeof HeuristicAI !== 'undefined' ? HeuristicAI : null,
             // typeof RandomAI !== 'undefined' ? RandomAI : null,
-            typeof AdvancedHexAI !== 'undefined' ? AdvancedHexAI : null
         ].filter(Boolean);
 
         aiClasses.forEach(aiClass => {
