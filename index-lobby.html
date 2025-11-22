@@ -598,6 +598,44 @@
         </div>
     </main>
 
+        <!-- Negotiation Modal -->
+    <div class="modal-overlay" id="negotiationModal">
+        <div class="modal">
+            <h2>Game Setup</h2>
+            <div class="modal-section">
+                <h3>Vote for Board Size</h3>
+                <div class="board-size-options" id="negotiationBoardSizes">
+                    <div class="option-btn selected" data-vote-size="7">
+                        <div class="option-title">7×7</div>
+                        <div class="option-desc">Small</div>
+                    </div>
+                    <div class="option-btn" data-vote-size="11">
+                        <div class="option-title">11×11</div>
+                        <div class="option-desc">Medium</div>
+                    </div>
+                    <div class="option-btn" data-vote-size="13">
+                        <div class="option-title">13×13</div>
+                        <div class="option-desc">Standard</div>
+                    </div>
+                    <div class="option-btn" data-vote-size="14">
+                        <div class="option-title">14×14</div>
+                        <div class="option-desc">Large</div>
+                    </div>
+                    <div class="option-btn" data-vote-size="19">
+                        <div class="option-title">19×19</div>
+                        <div class="option-desc">Huge</div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-message" id="negotiationStatus" style="text-align: center; margin-bottom: 20px; color: var(--primary); font-weight: 600;">
+                Waiting for opponent...
+            </div>
+            <div class="modal-buttons">
+                <button id="sendVoteBtn">Vote</button>
+            </div>
+        </div>
+    </div>
+
     <!-- New Game Modal (Also used for End Game / Rematch) -->
     <div class="modal-overlay" id="newGameModal">
         <div class="modal">

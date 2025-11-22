@@ -81,6 +81,11 @@ class HexLobbyUI {
         this.myVote = 11; // Default vote
         this.opponentVote = null;
 
+        // Verify critical DOM elements
+        if (!this.negotiationModal || !this.sendVoteBtn) {
+            console.error('Critical DOM elements missing. Please clear cache and refresh.');
+        }
+
         this.init();
     }
 
@@ -95,12 +100,12 @@ class HexLobbyUI {
         }
         
         // Common Event Listeners
-        this.newGameBtn.addEventListener('click', () => this.showNewGameModal());
-        this.analyticsBtn.addEventListener('click', () => this.toggleAnalytics());
-        this.returnLobbyBtn.addEventListener('click', () => this.returnToLobby());
-        this.returnToLobbyModalBtn.addEventListener('click', () => this.returnToLobby());
-        this.resignBtn.addEventListener('click', () => this.resignGame());
-        this.swapBtn.addEventListener('click', () => this.handleSwap());
+        if (this.newGameBtn) this.newGameBtn.addEventListener('click', () => this.showNewGameModal());
+        if (this.analyticsBtn) this.analyticsBtn.addEventListener('click', () => this.toggleAnalytics());
+        if (this.returnLobbyBtn) this.returnLobbyBtn.addEventListener('click', () => this.returnToLobby());
+        if (this.returnToLobbyModalBtn) this.returnToLobbyModalBtn.addEventListener('click', () => this.returnToLobby());
+        if (this.resignBtn) this.resignBtn.addEventListener('click', () => this.resignGame());
+        if (this.swapBtn) this.swapBtn.addEventListener('click', () => this.handleSwap());
         
         // Board Size Selection (PvE)
         this.boardSizeBtns.forEach(btn => {
@@ -112,15 +117,19 @@ class HexLobbyUI {
         });
 
         // Board Size Voting (PvP)
-        this.negotiationBoardSizeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.negotiationBoardSizeBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                this.myVote = parseInt(btn.dataset.voteSize);
+        if (this.negotiationBoardSizeBtns) {
+            this.negotiationBoardSizeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.negotiationBoardSizeBtns.forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    this.myVote = parseInt(btn.dataset.voteSize);
+                });
             });
-        });
+        }
         
-        this.sendVoteBtn.addEventListener('click', () => this.submitVote());
+        if (this.sendVoteBtn) {
+            this.sendVoteBtn.addEventListener('click', () => this.submitVote());
+        }
 
         // First Player Selection
         this.firstPlayerBtns.forEach(btn => {
@@ -240,6 +249,11 @@ class HexLobbyUI {
             console.log('Received move:', data);
             const { row, col, type } = data;
             
+            if (!this.game) {
+                console.warn('Received move before game started. Ignoring.');
+                return;
+            }
+
             if (type === 'swap') {
                 this.performSwap();
                 this.updateStatus();
@@ -300,22 +314,27 @@ class HexLobbyUI {
     }
 
     showNegotiationModal() {
+        if (!this.negotiationModal) return;
         this.negotiationModal.classList.add('active');
-        this.sendVoteBtn.textContent = 'Vote';
-        this.sendVoteBtn.disabled = false;
-        this.negotiationStatusEl.textContent = 'Vote for board size...';
+        if (this.sendVoteBtn) {
+            this.sendVoteBtn.textContent = 'Vote';
+            this.sendVoteBtn.disabled = false;
+        }
+        if (this.negotiationStatusEl) this.negotiationStatusEl.textContent = 'Vote for board size...';
         this.opponentVote = null; // Reset on show
         // Reset my selection to default or keep last? Let's default to 11
         // this.myVote = 11; 
         // Update UI selection
-        this.negotiationBoardSizeBtns.forEach(btn => {
-            if (parseInt(btn.dataset.voteSize) === this.myVote) btn.classList.add('selected');
-            else btn.classList.remove('selected');
-        });
+        if (this.negotiationBoardSizeBtns) {
+            this.negotiationBoardSizeBtns.forEach(btn => {
+                if (parseInt(btn.dataset.voteSize) === this.myVote) btn.classList.add('selected');
+                else btn.classList.remove('selected');
+            });
+        }
     }
 
     hideNegotiationModal() {
-        this.negotiationModal.classList.remove('active');
+        if (this.negotiationModal) this.negotiationModal.classList.remove('active');
     }
 
     submitVote() {
