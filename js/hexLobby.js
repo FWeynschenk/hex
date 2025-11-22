@@ -221,7 +221,8 @@ class HexLobbyUI {
             console.log('Peer joined:', peerId);
             this.opponentPeerId = peerId;
             this.statusEl.textContent = 'Opponent connected. Negotiating game setup...';
-            sendName(this.displayName);
+            // Exchange names AND persistent player IDs
+            sendName({ name: this.displayName, playerId: this.playerId });
             
             // Start Negotiation
             this.showNegotiationModal();
@@ -308,11 +309,23 @@ class HexLobbyUI {
             this.checkVoteAgreement();
         });
 
-        getName((name, peerId) => {
+        getName((data, peerId) => {
             if (!this.opponentPeerId) {
                 console.log('Setting opponentPeerId from name:', peerId);
                 this.opponentPeerId = peerId;
             }
+            
+            let name = 'Opponent';
+            if (typeof data === 'object') {
+                name = data.name || 'Opponent';
+                if (data.playerId) {
+                    this.opponentPlayerId = data.playerId; // Capture persistent ID
+                    this.loadPvPStats(); // Load stats once we have ID
+                }
+            } else {
+                name = data; // Fallback for older clients
+            }
+            
             this.opponentName = name;
             this.difficultyLevelEl.textContent = name;
         });
@@ -388,28 +401,26 @@ class HexLobbyUI {
     }
 
     startGamePvP() {
-        // Determine who is Player 1 (Red) and Player 2 (Blue) based on playerId sort order
-        // This ensures both peers agree without extra negotiation messages
-        const myId = this.playerId;
-        const theirId = this.opponentPeerId; // Actually we don't know their ID exactly same format, but we can use sorted peer IDs if we exchange them. 
-        // However, trystero peer IDs are random session IDs. Ideally we use the ones in URL.
-        // But we don't have their URL params. 
-        // Simple convention: Sort by Trystero Peer ID.
-        // Self ID is not directly exposed in simple Trystero API on the object, but we can just assume we are sorted against the peerId we see.
-        // Wait, Trystero uses 'selfId' export. 
-        
-        // Let's just use a random roll sent by both? Or simpler: Host (lobby creator) vs Joiner?
-        // The lobby URL doesn't specify who is host.
-        // Let's use the alphabetical order of Trystero Peer IDs.
-        
-        // We need our own peer ID. Trystero 'joinRoom' returns room, does it expose selfId?
-        // The `trystero-nostr.min.js` exports `selfId`.
+        // Determine who is Player 1 (Red) and Player 2 (Blue) based on persistent player IDs if available
+        // Fallback to ephemeral peer IDs if persistent IDs are not exchanged yet (though they should be)
         
         import('./trystero-nostr.min.js').then(module => {
-            const myPeerId = module.selfId;
-            const ids = [myPeerId, this.opponentPeerId].sort();
+            let amIRed = false;
             
-            if (myPeerId === ids[0]) {
+            if (this.opponentPlayerId && this.playerId) {
+                // Robust sort using persistent IDs
+                const ids = [this.playerId, this.opponentPlayerId].sort();
+                amIRed = (this.playerId === ids[0]);
+                console.log('Sorting by Player ID:', ids, 'My ID:', this.playerId, 'Am I Red?', amIRed);
+            } else {
+                // Fallback to ephemeral IDs (less robust against reconnects/ghosts)
+                console.warn('Using ephemeral peer IDs for color sorting (less robust)');
+                const myPeerId = module.selfId;
+                const ids = [myPeerId, this.opponentPeerId].sort();
+                amIRed = (myPeerId === ids[0]);
+            }
+            
+            if (amIRed) {
                 this.humanPlayer = 1; // Red
                 this.aiPlayer = 2; // Blue (Opponent)
                 this.isHost = true;
@@ -420,10 +431,6 @@ class HexLobbyUI {
             }
             
             console.log(`I am ${this.humanPlayer === 1 ? 'Red' : 'Blue'}`);
-            
-            // Reset Game
-            // this.boardSize = 11; // Now set via negotiation
-            // this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
             
             this.startNewGameInternal();
         });
@@ -872,6 +879,16 @@ class HexLobbyUI {
         }
     }
 
+    loadPvPStats() {
+        if (!this.opponentPlayerId || this.variant !== 'pvp') return;
+        
+        const allStats = JSON.parse(localStorage.getItem('hex_pvp_history') || '{}');
+        const stats = allStats[this.opponentPlayerId] || { wins: 0, losses: 0 };
+        
+        // Append stats to name
+        this.difficultyLevelEl.textContent = `${this.opponentName} (W:${stats.wins} L:${stats.losses})`;
+    }
+
     resignGame() {
         if (confirm('Are you sure you want to resign?')) {
             if (this.variant === 'pvp') {
@@ -890,10 +907,21 @@ class HexLobbyUI {
                 else stats[this.selectedAI].losses++;
                 localStorage.setItem('hex_pve_stats', JSON.stringify(stats));
             } else {
+                // Global PvP Stats
                 const stats = JSON.parse(localStorage.getItem('hex_pvp_stats') || '{ "wins": 0, "losses": 0 }');
                 if (isWin) stats.wins++;
                 else stats.losses++;
                 localStorage.setItem('hex_pvp_stats', JSON.stringify(stats));
+                
+                // Opponent Specific Stats
+                if (this.opponentPlayerId) {
+                    const history = JSON.parse(localStorage.getItem('hex_pvp_history') || '{}');
+                    if (!history[this.opponentPlayerId]) history[this.opponentPlayerId] = { wins: 0, losses: 0 };
+                    if (isWin) history[this.opponentPlayerId].wins++;
+                    else history[this.opponentPlayerId].losses++;
+                    localStorage.setItem('hex_pvp_history', JSON.stringify(history));
+                    this.loadPvPStats(); // Update display
+                }
             }
         } catch (e) {
             console.error('Failed to save stats', e);
