@@ -300,11 +300,19 @@ class HexLobbyUI {
         
         getVote((vote, peerId) => {
             console.log('Received vote:', vote);
+            if (!this.opponentPeerId) {
+                console.log('Setting opponentPeerId from vote:', peerId);
+                this.opponentPeerId = peerId;
+            }
             this.opponentVote = vote;
             this.checkVoteAgreement();
         });
 
         getName((name, peerId) => {
+            if (!this.opponentPeerId) {
+                console.log('Setting opponentPeerId from name:', peerId);
+                this.opponentPeerId = peerId;
+            }
             this.opponentName = name;
             this.difficultyLevelEl.textContent = name;
         });
@@ -429,6 +437,11 @@ class HexLobbyUI {
         this.swapBtn.style.display = 'none';
         this.rematchRequested = false;
         this.opponentRematchRequested = false;
+        
+        // Clear rematch message if any
+        const rematchMsg = this.modal.querySelector('.rematch-msg');
+        if (rematchMsg) rematchMsg.remove();
+        
         this.hideModal();
         
         // Update UI
@@ -458,6 +471,20 @@ class HexLobbyUI {
     updateRematchButtonState() {
         if (this.opponentRematchRequested) {
             this.startGameBtn.textContent = 'Accept Rematch';
+            // Add visible indication
+            const existingMsg = this.modal.querySelector('.rematch-msg');
+            if (!existingMsg) {
+                const msg = document.createElement('div');
+                msg.className = 'rematch-msg';
+                msg.style.textAlign = 'center';
+                msg.style.color = 'var(--primary)';
+                msg.style.fontWeight = 'bold';
+                msg.style.marginBottom = '10px';
+                msg.textContent = 'Opponent wants a rematch!';
+                // Insert before buttons
+                this.modalActionButtons.parentNode.insertBefore(msg, this.modalActionButtons);
+            }
+            
             this.checkRematchStart(); // If we already clicked, this will trigger
         }
     }
@@ -803,6 +830,10 @@ class HexLobbyUI {
         setTimeout(() => {
              this.modalTitle.textContent = isWin ? 'Victory!' : 'Defeat';
              this.modal.classList.add('active');
+             // Ensure cancel is hidden and return to lobby is shown for post-game
+             if (this.cancelBtn) this.cancelBtn.style.display = 'none';
+             if (this.returnToLobbyModalBtn) this.returnToLobbyModalBtn.style.display = 'inline-block';
+
              if (this.variant === 'pvp') {
                  this.startGameBtn.textContent = 'Request Rematch';
                  this.startGameBtn.disabled = false;
@@ -827,6 +858,10 @@ class HexLobbyUI {
         
         this.modalTitle.textContent = isWin ? 'Victory!' : 'Defeat';
         this.modal.classList.add('active');
+        
+        // Ensure cancel is hidden and return to lobby is shown for post-game
+        if (this.cancelBtn) this.cancelBtn.style.display = 'none';
+        if (this.returnToLobbyModalBtn) this.returnToLobbyModalBtn.style.display = 'inline-block';
         
         this.startGameBtn.textContent = 'Request Rematch';
         this.startGameBtn.disabled = false;
