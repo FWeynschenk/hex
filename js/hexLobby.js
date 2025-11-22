@@ -45,6 +45,12 @@ class HexLobbyUI {
         this.pveOptionsDiv = document.getElementById('pveOptions');
         this.modalActionButtons = document.getElementById('modalActionButtons');
 
+        // Negotiation Modal Elements
+        this.negotiationModal = document.getElementById('negotiationModal');
+        this.negotiationStatusEl = document.getElementById('negotiationStatus');
+        this.sendVoteBtn = document.getElementById('sendVoteBtn');
+        this.negotiationBoardSizeBtns = document.querySelectorAll('[data-vote-size]');
+
         // State
         this.game = null;
         this.humanPlayer = 1; // Red
@@ -63,12 +69,17 @@ class HexLobbyUI {
         this.sendMove = null;
         this.sendRematch = null;
         this.sendResign = null;
+        this.sendVote = null;
         this.opponentName = 'Opponent';
         this.opponentPeerId = null;
         this.isHost = false; // Determined by sort order of player IDs
         this.rematchRequested = false;
         this.opponentRematchRequested = false;
         this.opponentLeft = false;
+        
+        // Negotiation State
+        this.myVote = 11; // Default vote
+        this.opponentVote = null;
 
         this.init();
     }
@@ -91,7 +102,7 @@ class HexLobbyUI {
         this.resignBtn.addEventListener('click', () => this.resignGame());
         this.swapBtn.addEventListener('click', () => this.handleSwap());
         
-        // Board Size Selection
+        // Board Size Selection (PvE)
         this.boardSizeBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.boardSizeBtns.forEach(b => b.classList.remove('selected'));
@@ -99,6 +110,17 @@ class HexLobbyUI {
                 this.selectedBoardSize = parseInt(btn.dataset.size);
             });
         });
+
+        // Board Size Voting (PvP)
+        this.negotiationBoardSizeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.negotiationBoardSizeBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                this.myVote = parseInt(btn.dataset.voteSize);
+            });
+        });
+        
+        this.sendVoteBtn.addEventListener('click', () => this.submitVote());
 
         // First Player Selection
         this.firstPlayerBtns.forEach(btn => {
@@ -178,18 +200,22 @@ class HexLobbyUI {
         const [sendRematch, getRematch] = this.room.makeAction('rematch');
         const [sendResign, getResign] = this.room.makeAction('resign');
         const [sendName, getName] = this.room.makeAction('name');
+        const [sendVote, getVote] = this.room.makeAction('vote');
 
         this.sendMove = sendMove;
         this.sendRematch = sendRematch;
         this.sendResign = sendResign;
+        this.sendVote = sendVote;
 
         // Handlers
         this.room.onPeerJoin(peerId => {
             console.log('Peer joined:', peerId);
             this.opponentPeerId = peerId;
-            this.statusEl.textContent = 'Opponent connected. Starting game...';
+            this.statusEl.textContent = 'Opponent connected. Negotiating game setup...';
             sendName(this.displayName);
-            this.startGamePvP();
+            
+            // Start Negotiation
+            this.showNegotiationModal();
         });
 
         this.room.onPeerLeave(peerId => {
@@ -198,6 +224,8 @@ class HexLobbyUI {
             this.opponentLeft = true;
             this.opponentPeerId = null;
             
+            this.hideNegotiationModal(); // If in negotiation, close it
+
             if (!this.game?.gameOver) {
                 // Win by default if opponent leaves during game
                 this.handlePvPWin(this.humanPlayer, 'Opponent disconnected');
@@ -255,6 +283,12 @@ class HexLobbyUI {
             console.log('Opponent resigned');
             this.handlePvPWin(this.humanPlayer, 'Opponent Resigned');
         });
+        
+        getVote((vote, peerId) => {
+            console.log('Received vote:', vote);
+            this.opponentVote = vote;
+            this.checkVoteAgreement();
+        });
 
         getName((name, peerId) => {
             this.opponentName = name;
@@ -263,6 +297,67 @@ class HexLobbyUI {
 
         // Initial wait status
         this.statusEl.textContent = 'Waiting for opponent...';
+    }
+
+    showNegotiationModal() {
+        this.negotiationModal.classList.add('active');
+        this.sendVoteBtn.textContent = 'Vote';
+        this.sendVoteBtn.disabled = false;
+        this.negotiationStatusEl.textContent = 'Vote for board size...';
+        this.opponentVote = null; // Reset on show
+        // Reset my selection to default or keep last? Let's default to 11
+        // this.myVote = 11; 
+        // Update UI selection
+        this.negotiationBoardSizeBtns.forEach(btn => {
+            if (parseInt(btn.dataset.voteSize) === this.myVote) btn.classList.add('selected');
+            else btn.classList.remove('selected');
+        });
+    }
+
+    hideNegotiationModal() {
+        this.negotiationModal.classList.remove('active');
+    }
+
+    submitVote() {
+        this.sendVote(this.myVote);
+        this.sendVoteBtn.textContent = 'Vote Sent';
+        this.sendVoteBtn.disabled = true;
+        this.negotiationStatusEl.textContent = 'Waiting for opponent\'s vote...';
+        this.checkVoteAgreement();
+    }
+
+    checkVoteAgreement() {
+        if (this.opponentVote === null) {
+            // Still waiting
+            if (this.sendVoteBtn.disabled) {
+                this.negotiationStatusEl.textContent = `You voted ${this.myVote}×${this.myVote}. Waiting for opponent...`;
+            }
+            return;
+        }
+        
+        // Both have voted (assuming I voted if button is disabled, or check if I've sent? sendVoteBtn.disabled is a proxy)
+        if (!this.sendVoteBtn.disabled) {
+            this.negotiationStatusEl.textContent = `Opponent voted ${this.opponentVote}×${this.opponentVote}. Cast your vote!`;
+            return; 
+        }
+
+        // Both voted
+        if (this.myVote === this.opponentVote) {
+            this.negotiationStatusEl.textContent = `Agreed on ${this.myVote}×${this.myVote}! Starting game...`;
+            setTimeout(() => {
+                this.hideNegotiationModal();
+                this.boardSize = this.myVote;
+                this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
+                this.startGamePvP();
+            }, 1500);
+        } else {
+            this.negotiationStatusEl.textContent = `Mismatch! You: ${this.myVote}, Opponent: ${this.opponentVote}. Vote again!`;
+            this.opponentVote = null; // Reset to force new round of voting
+            setTimeout(() => {
+                 this.sendVoteBtn.disabled = false;
+                 this.sendVoteBtn.textContent = 'Vote Again';
+            }, 2000);
+        }
     }
 
     startGamePvP() {
@@ -300,11 +395,8 @@ class HexLobbyUI {
             console.log(`I am ${this.humanPlayer === 1 ? 'Red' : 'Blue'}`);
             
             // Reset Game
-            this.boardSize = 13; // Standard PvP size? Or make it configurable? Let's stick to 13 for PvP default or 11. 11 is common.
-            // Note: Both must agree. Hardcode to 11 for PvP for now or 13.
-            // Let's use 11.
-            this.boardSize = 11; 
-            this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
+            // this.boardSize = 11; // Now set via negotiation
+            // this.hexRadius = SIZE_RADIUS_MAP[this.boardSize];
             
             this.startNewGameInternal();
         });
